@@ -1,0 +1,16 @@
+{
+  "name": "Impossible Nostalgia",
+  "short_name": "Nostalgia",
+  "description": "An unfinished navigation system by Anna Soz.",
+  "id": "./",
+  "start_url": "./?source=installed",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0868da",
+  "theme_color": "#0868da",
+  "icons": [
+    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
