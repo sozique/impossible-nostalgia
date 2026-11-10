@@ -52,6 +52,8 @@ button.action:active{border-color:#454545 #fff #fff #454545;padding:6px 7px 4px 
 .modal{display:none;position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:min(400px,80%);background:#c0c0c0;border:2px solid;border-color:#fff #444 #444 #fff;box-shadow:5px 7px #0005;padding:3px}
 .modal.open{display:block}.modal p{margin:20px 15px;line-height:1.6}.modal button{width:95px;margin:0 12px 13px auto;display:block;text-align:center}
 .modal p{white-space:pre-line}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:0 12px 13px}.modal .modal-actions button{width:95px;margin:0;flex:none}.modal #modalAlt{display:none}
+.audio-unlock{display:none!important}
 @media(max-width:620px){.desktop{padding:10px}.window{width:100%;height:93%;min-height:0}.desktop-icon{display:none}.main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.sidebar{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.sidebar .group,.sidebar .spacer,.sidebar .small{display:none}.sidebar button{min-height:30px;padding:5px}.menu{font-size:11px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media(max-width:620px){
@@ -107,24 +109,24 @@ body.installation .view-label,body.installation .hud,body.installation .audio-un
     <nav class="menu" aria-label="Program menu">
       <div class="menu-group"><button class="menu-trigger" aria-expanded="false"><u>F</u>ile</button><div class="menu-dropdown"><button data-command="new">New session</button><button data-command="log">Session log...</button><div class="menu-separator"></div><button data-command="disconnect">Disconnect...</button></div></div>
       <div class="menu-group"><button class="menu-trigger" aria-expanded="false"><u>V</u>iew</button><div class="menu-dropdown"><button data-command="freeze">Pause image</button><button data-command="scan">Toggle scanlines</button><button data-command="installation">Installation mode (fullscreen)</button><div class="menu-separator"></div><button data-command="ambience">Toggle ambience</button><button data-command="sound">Toggle interface sound</button></div></div>
-      <div class="menu-group"><button class="menu-trigger" aria-expanded="false"><u>L</u>ocation</button><div class="menu-dropdown"><button data-command="next">Next location</button><button data-command="previous">Previous location</button><button data-command="random">Unidentified destination</button><div class="menu-separator"></div><button data-command="home">Search for home...</button></div></div>
+      <div class="menu-group"><button class="menu-trigger" aria-expanded="false"><u>L</u>ocation</button><div class="menu-dropdown"><button data-command="next">Next location</button><button data-command="previous">Previous location</button><button data-command="random">Unidentified destination</button><div class="menu-separator"></div><button data-command="fix">Request temporary fix...</button></div></div>
       <div class="menu-group"><button class="menu-trigger" aria-expanded="false"><u>H</u>elp</button><div class="menu-dropdown"><button data-command="about">About Impossible Nostalgia</button><button data-command="controls">Navigation help...</button><button data-command="system">System information...</button></div></div>
     </nav>
     <div class="main">
       <section class="view-outer"><canvas id="land" width="360" height="240" aria-label="Slowly moving, degraded three-dimensional landscapes"></canvas><div class="view-overlay"></div><div class="view-label" id="viewLabel">LOCATION UNKNOWN</div><button class="audio-unlock" id="audioUnlock" type="button">♪ ENABLE AUDIO</button><div class="hud"><span id="coordinates">X: -- / Y: --</span><span id="signal">SIGNAL: SEARCHING</span></div></section>
       <aside class="sidebar">
-        <div class="group"><div class="group-title">Current status</div><div class="state" id="state">HOME = ?<br>Awaiting input</div></div>
+        <div class="group"><div class="group-title">Current status</div><div class="state" id="state">POSITION: UNASSIGNED</div></div>
         <button class="action" id="enter">&gt; Enter</button>
         <button class="action" id="continue">&gt; Continue</button>
         <button class="action" id="return">&gt; Return</button>
         <div class="spacer"></div>
-        <div class="small">DEVICE: POS/01<br>ARCHIVE: LOCAL<br>SESSION: OPEN<br>CONNECTION: NOT REQUIRED</div>
+        <div class="small">DEVICE: LOCAL/01<br>ARCHIVE: INTERNAL<br>SESSION: OPEN<br>CHANNEL: INTERNAL</div>
         <button class="action" id="sound">♪ Sound: Off</button>
         <button class="action" id="ambient">♫ Ambience: Off</button>
       </aside>
     </div>
     <div class="statusbar"><span id="message">The system is ready.</span><span id="count">00 / ∞</span></div>
-    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="System message"><div class="titlebar"><span id="modalTitle">About this program</span><button class="ctrl" id="modalX">×</button></div><p id="modalText">Impossible Nostalgia<br><br>An unfinished navigation system.<br>No network connection is required.</p><button class="action" id="modalOk">OK</button></div>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="System message"><div class="titlebar"><span id="modalTitle">About this program</span><button class="ctrl" id="modalX">×</button></div><p id="modalText">Impossible Nostalgia<br><br>An unfinished navigation system.<br>ENTRY: LOCAL<br>POSITION: UNCONFIRMED</p><div class="modal-actions"><button class="action" id="modalAlt">Relocate</button><button class="action" id="modalOk">OK</button></div></div>
   </main>
 </div>
 <footer class="taskbar"><button class="start" id="start">▦ Start</button><div class="taskitem">▣ Impossible Nostalgia</div><div class="clock" id="clock">00:00</div></footer>
@@ -336,16 +338,27 @@ async function toggleAmbience(){
   },18000);
  }catch(e){ambience=false;$('ambient').textContent='♫ Ambience: Off';}
 }
-function show(n,method){index=n;steps++;if(method==='reset'||sceneIndex<0)sceneIndex=0;else sceneIndex=(sceneIndex+(method==='return'?-1:1)+scenes.length)%scenes.length;const s=states[index];lastChange=performance.now();pausedAt=lastChange;land(lastChange);$('state').innerHTML=s.status+'<br>'+s.name;$('viewLabel').textContent=s.label;$('signal').textContent='SIGNAL: '+s.signal;$('coordinates').textContent='X: '+String((steps*17)%89).padStart(2,'0')+' / Y: '+String((steps*7)%73).padStart(2,'0');$('message').textContent=s.message;$('count').textContent=String(steps).padStart(2,'0')+' / ∞';sessionHistory.push(String(steps).padStart(2,'0')+'  '+s.status+' / '+s.label);if(sessionHistory.length>24)sessionHistory.shift();beep();}
+function show(n,method){index=n;steps++;if(method==='reset'||sceneIndex<0)sceneIndex=0;else sceneIndex=(sceneIndex+(method==='return'?-1:1)+scenes.length)%scenes.length;const s=states[index];lastChange=performance.now();pausedAt=lastChange;land(lastChange);$('state').textContent=s.status;$('viewLabel').textContent=s.label;$('signal').textContent='SIGNAL: '+s.signal;$('coordinates').textContent='X: '+String((steps*17)%89).padStart(2,'0')+' / Y: '+String((steps*7)%73).padStart(2,'0');$('message').textContent=s.message;$('count').textContent=String(steps).padStart(2,'0')+' / ∞';sessionHistory.push(String(steps).padStart(2,'0')+'  '+s.status+' / '+s.label);if(sessionHistory.length>24)sessionHistory.shift();beep();}
 $('enter').onclick=()=>show((index+1+states.length)%states.length,'enter');
 $('continue').onclick=()=>show(index<0?0:(index+1)%states.length,'continue');
 $('return').onclick=()=>show(index<0?states.length-1:(index-1+states.length)%states.length,'return');
 function reset(){steps=0;show(0,'reset')}
 $('resetTop').onclick=reset;$('desktopIcon').onclick=reset;
 function modal(v){$('modal').classList.toggle('open',v)}
-function message(title,body){$('modalTitle').textContent=title;$('modalText').textContent=body;modal(true)}
-function about(){message('About this program','IMPOSSIBLE NOSTALGIA\n\nAn unfinished navigation system.\nDestination: unavailable.\nArchive: local.\nConnection: not required.')}
-$('aboutTop').onclick=about;$('start').onclick=about;$('modalX').onclick=()=>modal(false);$('modalOk').onclick=()=>modal(false);
+let fixStage=-1,fixAttempt=0;
+const fixDialogues=[
+ {title:'Position request',body:()=>`REQUEST #${String(fixAttempt).padStart(3,'0')}: PROVISIONAL FIX\nCURRENT STATE: IN TRANSIT\n\nPOSSIBLE POSITION: AVAILABLE`,button:'Accept'},
+ {title:'Context verification',body:()=>`COORDINATES: VALID\nREFERENCE FRAME: SHIFTING\n\nCONTINUITY: UNCONFIRMED`,button:'Continue'},
+ {title:'Temporary fix',body:()=>`POSITION: ASSIGNED\nDURATION: UNDEFINED\n\nTHIS STATE IS SUBJECT TO REVISION`,button:'Remain'}
+];
+function fixWindow(){const d=fixDialogues[fixStage];$('modalTitle').textContent=d.title;$('modalText').textContent=d.body();$('modalOk').textContent=d.button;$('modalAlt').style.display=fixStage===fixDialogues.length-1?'block':'none';modal(true)}
+function startFixRequest(){fixAttempt++;fixStage=0;lastChange=performance.now();fixWindow()}
+function advanceFixRequest(){if(fixStage<0){closeModal();return}if(fixStage<fixDialogues.length-1){fixStage++;fixWindow()}else{closeModal();lastChange=performance.now();pausedAt=lastChange;$('state').textContent='FIX: PROVISIONAL';$('message').textContent='POSITION HELD / DURATION UNKNOWN'}beep()}
+function relocateRequest(){if(fixStage!==fixDialogues.length-1)return;closeModal();$('continue').click()}
+function closeModal(){fixStage=-1;$('modalAlt').style.display='none';modal(false)}
+function message(title,body){fixStage=-1;$('modalAlt').style.display='none';$('modalOk').textContent='OK';$('modalTitle').textContent=title;$('modalText').textContent=body;modal(true)}
+function about(){message('About this program','IMPOSSIBLE NOSTALGIA\n\nAn unfinished navigation system.\n\nENTRY: LOCAL\nPOSITION: UNCONFIRMED\nDURATION: UNDEFINED')}
+$('aboutTop').onclick=about;$('start').onclick=about;$('modalX').onclick=closeModal;$('modalOk').onclick=advanceFixRequest;$('modalAlt').onclick=relocateRequest;
 $('sound').onclick=()=>{sound=!sound;$('sound').textContent='♪ Sound: '+(sound?'On':'Off');if(sound)beep()};
 $('ambient').onclick=()=>{ambience=!ambience;$('ambient').textContent='♫ Ambience: '+(ambience?'On':'Off');if(ambience)playTrack(ambientTrack);else ambientTrack.pause();};
 $('audioUnlock').onclick=()=>{
@@ -375,7 +388,7 @@ document.querySelectorAll('[data-command]').forEach(item=>item.addEventListener(
  e.stopPropagation();const cmd=item.dataset.command;closeMenus();
  if(cmd==='new'){sessionHistory.length=0;reset();message('New session','SESSION INITIALIZED\n\nPrevious route discarded.\nHOME = /')}
  else if(cmd==='log')message('Session log',sessionHistory.join('\n')||'NO RECORDS FOUND');
- else if(cmd==='disconnect')message('Connection error','ERROR: DISCONNECTED\n\nNo active network connection was detected.\nThe archive remains available.');
+ else if(cmd==='disconnect')message('Signal state','EXTERNAL CHANNEL: UNAVAILABLE\nLOCAL ARCHIVE: RETAINED\n\nREFERENCE FRAME: SHIFTING');
  else if(cmd==='freeze'){paused=!paused;pausedAt=performance.now();$('message').textContent=paused?'IMAGE PAUSED':'IMAGE RESUMED';item.textContent=paused?'Resume image':'Pause image';lastChange=performance.now()}
  else if(cmd==='scan'){scanlines=!scanlines;$('message').textContent=scanlines?'SCANLINES ENABLED':'SCANLINES DISABLED'}
  else if(cmd==='installation')toggleInstallationMode();
@@ -384,14 +397,14 @@ document.querySelectorAll('[data-command]').forEach(item=>item.addEventListener(
  else if(cmd==='next')$('continue').click();
  else if(cmd==='previous')$('return').click();
  else if(cmd==='random'){sceneIndex=Math.floor(Math.random()*scenes.length)-1;show(9,'random');$('message').textContent='UNIDENTIFIED DESTINATION LOADED'}
- else if(cmd==='home')message('Searching for home','HOME = ?\n\nREROUTING…\nNO FIX\n\nThe requested location cannot be restored.');
+ else if(cmd==='fix')startFixRequest();
  else if(cmd==='about')about();
  else if(cmd==='controls')message('Navigation help','ENTER — attempt to enter\nCONTINUE — search another location\nRETURN — recover a previous route\n\nSome locations may not be identified.');
- else if(cmd==='system')message('System information','DEVICE: POS/01\nARCHIVE: LOCAL / '+scenes.length+' LOCATIONS\nSESSION: ACTIVE\nCOORDINATES: UNVERIFIED\nNETWORK: NOT REQUIRED');
+ else if(cmd==='system')message('System information','DEVICE: LOCAL/01\nARCHIVE: INTERNAL / '+scenes.length+' LOCATIONS\nSESSION: ACTIVE\nCOORDINATES: UNVERIFIED\nCHANNEL: INTERNAL');
 }));
 document.addEventListener('click',e=>{if(!e.target.closest('.menu'))closeMenus()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenus();modal(false)}});
-function tick(now){if(now-lastFrame>85){lastFrame=now;land(paused?pausedAt:now);const d=new Date();$('clock').textContent=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}if(!paused&&now-lastChange>(installationMode?22000+(steps%3)*11000:38000)){show((index+1)%states.length,'auto');}requestAnimationFrame(tick)}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenus();closeModal()}});
+function tick(now){if(now-lastFrame>85){lastFrame=now;land(paused?pausedAt:now);const d=new Date();$('clock').textContent=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}if(!paused&&!$('modal').classList.contains('open')&&now-lastChange>(installationMode?22000+(steps%3)*11000:38000)){show((index+1)%states.length,'auto');}requestAnimationFrame(tick)}
 show(0,'init');tick();
 })();
 </script>
